@@ -7,7 +7,7 @@
 #include "MOOS/libMOOS/Comms/MOOSAsyncCommClient.h"
 
 namespace bp = boost::python;
-
+/*
 struct World
 {
     void set(std::string msg) { this->msg = msg; }
@@ -30,14 +30,17 @@ struct World
 
 };
 
+
 std::string call_wrap(bp::object & func)
 {
     bp::object result = func();
     return bp::extract<std::string>(result);
-}
+}*/
 
 namespace MOOS
 {
+
+
 class AsyncCommsWrapper : public MOOS::MOOSAsyncCommClient
 {
 private:
@@ -111,9 +114,58 @@ public:
         return bp::extract<bool>(result);
     }
 
+    static bool active_queue_delegate(CMOOSMsg & M, void* pParam)
+    {
+        MeAndQueue * maq = static_cast<MeAndQueue*> (pParam);
+        return maq->me_->OnQueue(M,maq->queue_name_);
+    }
+
+    bool OnQueue(CMOOSMsg & M, const std::string & sQueueName)
+    {
+        std::map<std::string, MeAndQueue*>::iterator q ;
+
+        {
+            MOOS::ScopedLock L(queue_api_lock_);
+            q = active_queue_details_.find(sQueueName);
+            if(q==active_queue_details_.end())
+                return false;
+        }
+
+        PyGILState_STATE gstate = PyGILState_Ensure();
+        bp::object result = q->second->func_(M);
+        PyGILState_Release(gstate);
+        return bp::extract<bool>(result);
+
+    }
+
+    virtual bool AddActiveQueue(const std::string & sQueueName,
+                                bp::object func,
+                    void * pYourParam )
+    {
+        MOOS::ScopedLock L(queue_api_lock_);
+
+        MeAndQueue* maq = new MeAndQueue;
+        maq->me_=this;
+        maq->queue_name_=sQueueName;
+        maq->func_=func;
+
+        active_queue_details_[sQueueName]=maq;
+        return BASE::AddActiveQueue(sQueueName,active_queue_delegate,maq);
+
+    }
+
+struct MeAndQueue
+{
+    AsyncCommsWrapper* me_;
+    std::string queue_name_;
+    bp::object func_;
+};
+
 private:
     bp::object  on_connect_object_;
     bp::object  on_mail_object_;
+    std::map<std::string, MeAndQueue*> active_queue_details_;
+    CMOOSLock queue_api_lock_;
 
 
 };
@@ -170,6 +222,44 @@ BOOST_PYTHON_MODULE(pymoos)
 
         .def("notify", static_cast< bool (CMOOSCommClient::*)(const std::string&,double,double) > (&CMOOSCommClient::Notify))
         .def("notify", static_cast< bool (CMOOSCommClient::*)(const std::string&,double,const std::string&,double) > (&CMOOSCommClient::Notify))
+
+        .def("get_community_name", &CMOOSCommClient::GetCommunityName)
+        .def("get_moos_name", &CMOOSCommClient::GetMOOSName)
+
+        .def("is_connected", &CMOOSCommClient::IsConnected)
+        .def("wait_until_connected", &CMOOSCommClient::WaitUntilConnected)
+
+        .def("get_description", &CMOOSCommClient::GetDescription)
+        .def("close", &CMOOSCommClient::Close)
+
+        .def("get_published", &CMOOSCommClient::GetPublished)
+        .def("get_registered", &CMOOSCommClient::GetRegistered)
+
+        .def("is_registered_for", &CMOOSCommClient::IsRegisteredFor)
+        .def("is_running", &CMOOSCommClient::IsRunning)
+
+        .def("is_asynchronous", &CMOOSCommClient::IsAsynchronous)
+
+        .def("get_number_of_unread_messages", &CMOOSCommClient::GetNumberOfUnreadMessages)
+        .def("get_number_of_unsent_messages", &CMOOSCommClient::GetNumberOfUnsentMessages)
+
+        .def("get_number_bytes_sent", &CMOOSCommClient::GetNumBytesSent)
+        .def("get_number_bytes_read", &CMOOSCommClient::GetNumBytesReceived)
+
+        .def("get_number_messages_sent", &CMOOSCommClient::GetNumMsgsSent)
+        .def("get_number_message_read", &CMOOSCommClient::GetNumMsgsReceived)
+
+        .def("set_comms_control_timewarp_scale_factor", &CMOOSCommClient::SetCommsControlTimeWarpScaleFactor)
+        .def("get_comms_control_timewarp_scale_factor", &CMOOSCommClient::GetCommsControlTimeWarpScaleFactor)
+
+
+        .def("set_quiet", &CMOOSCommClient::SetQuiet)
+        .def("do_local_time_correction", &CMOOSCommClient::DoLocalTimeCorrection)
+
+        .def("set_verbose_debug", &CMOOSCommClient::SetVerboseDebug)
+        .def("set_comms_tick", &CMOOSCommClient::SetCommsTick)
+
+
         ;
 
 
@@ -186,10 +276,13 @@ BOOST_PYTHON_MODULE(pymoos)
               .def("set_on_mail_callback", &MOOS::AsyncCommsWrapper::SetOnMailCallback)
 
               .def("notify_binary", &MOOS::AsyncCommsWrapper::NotifyBinary)
-            ;
+
+              .def("add_active_queue", &MOOS::AsyncCommsWrapper::AddActiveQueue)
+
+              ;
 
 
-
+/*
     bp::class_<World>("World")
         .def("greet", &World::greet)
         .def("set", &World::set)
@@ -197,7 +290,7 @@ BOOST_PYTHON_MODULE(pymoos)
         .def("f",static_cast< bool (World::*)(int) > (&World::f) )
         .def("f",static_cast< bool (World::*)(int,int) > (&World::f) );
 
-    bp::def("call", &call_wrap);
+    bp::def("call", &call_wrap);*/
 
     bp::def("time",&MOOSTime,time_overloads());
     bp::def("local_time",&MOOSLocalTime,time_overloads());
