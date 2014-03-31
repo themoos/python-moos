@@ -63,6 +63,12 @@ public:
     }
 
 
+    bool NotifyBinary(const std::string& sKey,const std::string & sData, double dfTime)
+    {
+        CMOOSMsg M(MOOS_NOTIFY,sKey, sData.size(),(void *) sData.data(), dfTime);
+        return BASE::Post( M );
+    }
+
 
     static bool on_connect_delegate(void * pParam)
     {
@@ -140,7 +146,7 @@ BOOST_PYTHON_MODULE(pymoos)
             .def("string", &CMOOSMsg::GetString)
 
             .def("is_binary", &CMOOSMsg::IsBinary)
-            .def("binary_data",&CMOOSMsg::GetBinaryDataAsVector)
+            .def("binary_data",&CMOOSMsg::GetString)
             .def("binary_data_size", &CMOOSMsg::GetBinaryDataSize)
             .def("mark_as_binary", &CMOOSMsg::MarkAsBinary)
             ;
@@ -148,6 +154,7 @@ BOOST_PYTHON_MODULE(pymoos)
     bp::class_<MsgVector>("moos_msg_list")
             .def(bp::vector_indexing_suite<MsgVector>() )
             ;
+
 
     bp::class_<CMOOSCommObject >("base_comms_object",bp::no_init);
 
@@ -163,12 +170,6 @@ BOOST_PYTHON_MODULE(pymoos)
 
         .def("notify", static_cast< bool (CMOOSCommClient::*)(const std::string&,double,double) > (&CMOOSCommClient::Notify))
         .def("notify", static_cast< bool (CMOOSCommClient::*)(const std::string&,double,const std::string&,double) > (&CMOOSCommClient::Notify))
-
-        .def("notify", static_cast< bool (CMOOSCommClient::*)(const std::string&,void *,unsigned int, double) > (&CMOOSCommClient::Notify))
-        .def("notify", static_cast< bool (CMOOSCommClient::*)(const std::string&,void *,unsigned int,const std::string&,double) > (&CMOOSCommClient::Notify))
-
-        .def("notify", static_cast< bool (CMOOSCommClient::*)(const std::string&,const std::vector<unsigned char>&, double) > (&CMOOSCommClient::Notify))
-        .def("notify", static_cast< bool (CMOOSCommClient::*)(const std::string&,const std::vector<unsigned char>&,const std::string&,double) > (&CMOOSCommClient::Notify))
         ;
 
 
@@ -180,8 +181,11 @@ BOOST_PYTHON_MODULE(pymoos)
     bp::class_<MOOS::AsyncCommsWrapper, bp::bases<MOOS::MOOSAsyncCommClient>, boost::noncopyable >("comms")
               .def("run", &MOOS::AsyncCommsWrapper::Run)
               .def("fetch", &MOOS::AsyncCommsWrapper::FetchMailAsVector)
+
               .def("set_on_connect_callback", &MOOS::AsyncCommsWrapper::SetOnConnectCallback)
               .def("set_on_mail_callback", &MOOS::AsyncCommsWrapper::SetOnMailCallback)
+
+              .def("notify_binary", &MOOS::AsyncCommsWrapper::NotifyBinary)
             ;
 
 
@@ -196,6 +200,8 @@ BOOST_PYTHON_MODULE(pymoos)
     bp::def("call", &call_wrap);
 
     bp::def("time",&MOOSTime,time_overloads());
+    bp::def("local_time",&MOOSLocalTime,time_overloads());
+    bp::def("is_little_end_in",&IsLittleEndian);
 
 }
 
