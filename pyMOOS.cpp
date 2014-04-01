@@ -6,39 +6,35 @@
 #include "MOOS/libMOOS/Comms/MOOSCommClient.h"
 #include "MOOS/libMOOS/Comms/MOOSAsyncCommClient.h"
 
+#include <exception>
+
+
 namespace bp = boost::python;
-/*
-struct World
+
+
+struct pyMOOSException : std::exception
 {
-    void set(std::string msg) { this->msg = msg; }
-    std::string greet() { return msg; }
-    std::string msg;
+    pyMOOSException(){s_="boo";};
+    virtual ~pyMOOSException() throw(){};
 
-    bool f(int j){j=8;return true;};
-    bool f(int j,int k){j=8;k=9;return true;};
-
-    std::string call_wrap(bp::object & func)
-    {
-        PyGILState_STATE gstate = PyGILState_Ensure();
-
-        bp::object result = func();
-
-        PyGILState_Release(gstate);
-
-        return bp::extract<std::string>(result);
-    }
-
+    pyMOOSException(const std::string & s) :s_(s){}
+    char const* what() const throw() { return s_.c_str(); return "lala";/*return s_.c_str();*/ }
+    std::string s_;
 };
 
-
-std::string call_wrap(bp::object & func)
+void MOOSExceptionTranslator(const pyMOOSException & e)
 {
-    bp::object result = func();
-    return bp::extract<std::string>(result);
-}*/
+    // Use the Python 'C' API to set up an exception object
+    PyErr_SetString(PyExc_RuntimeError, e.what());
+}
+
+
 
 namespace MOOS
 {
+
+
+
 
 
 class AsyncCommsWrapper : public MOOS::MOOSAsyncCommClient
@@ -86,10 +82,28 @@ public:
     }
     bool on_connect()
     {
+
+        bool bResult=false;
+
         PyGILState_STATE gstate = PyGILState_Ensure();
-        bp::object result = on_connect_object_();
+        try
+        {
+            bp::object result = on_connect_object_();
+            bResult =  bp::extract<bool>(result);
+        }
+        catch (const bp::error_already_set& e)
+        {
+            PyGILState_Release(gstate);
+            throw pyMOOSException("OnConnect:: caught an exception thrown in python callback");
+        }
+
         PyGILState_Release(gstate);
-        return bp::extract<bool>(result);
+
+
+        return bResult;
+
+
+
     }
 
 
@@ -108,10 +122,26 @@ public:
 
     bool on_mail()
     {
+
+        bool bResult=false;
+
         PyGILState_STATE gstate = PyGILState_Ensure();
-        bp::object result = on_mail_object_();
+        try
+        {
+            bp::object result = on_mail_object_();
+            bResult =  bp::extract<bool>(result);
+        }
+        catch (const bp::error_already_set& e)
+        {
+            PyGILState_Release(gstate);
+            throw pyMOOSException("OnMail:: caught an exception thrown in python callback");
+        }
+
         PyGILState_Release(gstate);
-        return bp::extract<bool>(result);
+
+
+        return bResult;
+
     }
 
     static bool active_queue_delegate(CMOOSMsg & M, void* pParam)
@@ -131,23 +161,40 @@ public:
                 return false;
         }
 
+        bool bResult=false;
+
         PyGILState_STATE gstate = PyGILState_Ensure();
-        bp::object result = q->second->func_(M);
+        try
+        {
+            bp::object result = q->second->func_(M);
+            bResult =  bp::extract<bool>(result);
+        }
+        catch (const bp::error_already_set& e)
+        {
+            PyGILState_Release(gstate);
+            throw pyMOOSException("ActiveQueue:: caught an exception thrown in python callback");
+        }
+
         PyGILState_Release(gstate);
-        return bp::extract<bool>(result);
+
+
+        return bResult;
 
     }
 
     virtual bool AddActiveQueue(const std::string & sQueueName,
-                                bp::object func,
-                    void * pYourParam )
+                                bp::object func)
     {
+
         MOOS::ScopedLock L(queue_api_lock_);
 
         MeAndQueue* maq = new MeAndQueue;
         maq->me_=this;
         maq->queue_name_=sQueueName;
         maq->func_=func;
+
+        std::cerr<<"adding active queue OK\n";
+
 
         active_queue_details_[sQueueName]=maq;
         return BASE::AddActiveQueue(sQueueName,active_queue_delegate,maq);
@@ -172,14 +219,19 @@ private:
 };
 
 typedef std::vector<CMOOSMsg> MsgVector;
+typedef std::vector<MOOS::ClientCommsStatus> CommsStatusVector;
 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(f_overloads, f, 1, 2);
 BOOST_PYTHON_FUNCTION_OVERLOADS(time_overloads, MOOSTime, 0, 1);
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(notify_overloads_2_3, Notify, 2,3);
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(notify_overloads_3_4, Notify, 3,4);
 
+
+
+
 BOOST_PYTHON_MODULE(pymoos)
 {
+
     PyEval_InitThreads();
 
     bp::class_<CMOOSMsg>("moos_msg")
@@ -208,56 +260,66 @@ BOOST_PYTHON_MODULE(pymoos)
             ;
 
 
+    bp::class_<MOOS::ClientCommsStatus>("moos_comms_status")
+                .def("appraise", &MOOS::ClientCommsStatus::Appraise)
+                .def("print", &MOOS::ClientCommsStatus::Write)
+                ;
+
+
+    bp::class_<CommsStatusVector>("moos_comms_status_list")
+            .def(bp::vector_indexing_suite<CommsStatusVector>() )
+            ;
+
+
+
     bp::class_<CMOOSCommObject >("base_comms_object",bp::no_init);
 
     bp::class_<CMOOSCommClient, bp::bases<CMOOSCommObject>, boost::noncopyable >("base_sync_comms",bp::no_init)
+
         .def("register", static_cast< bool (CMOOSCommClient::*)(const std::string& ,double) > (&CMOOSCommClient::Register))
         .def("register", static_cast< bool (CMOOSCommClient::*)(const std::string&,const std::string&,double) > (&CMOOSCommClient::Register))
+        .def("is_registered_for", &CMOOSCommClient::IsRegisteredFor)
 
         .def("notify", static_cast< bool (CMOOSCommClient::*)(const std::string&,const std::string&,double) > (&CMOOSCommClient::Notify),notify_overloads_2_3())
         .def("notify", static_cast< bool (CMOOSCommClient::*)(const std::string&,const std::string&,const std::string&,double) > (&CMOOSCommClient::Notify),notify_overloads_2_3())
-
         .def("notify", static_cast< bool (CMOOSCommClient::*)(const std::string&,const char *,double) > (&CMOOSCommClient::Notify))
         .def("notify", static_cast< bool (CMOOSCommClient::*)(const std::string&,const char *,const std::string&,double) > (&CMOOSCommClient::Notify))
-
         .def("notify", static_cast< bool (CMOOSCommClient::*)(const std::string&,double,double) > (&CMOOSCommClient::Notify))
         .def("notify", static_cast< bool (CMOOSCommClient::*)(const std::string&,double,const std::string&,double) > (&CMOOSCommClient::Notify))
 
         .def("get_community_name", &CMOOSCommClient::GetCommunityName)
         .def("get_moos_name", &CMOOSCommClient::GetMOOSName)
 
-        .def("is_connected", &CMOOSCommClient::IsConnected)
-        .def("wait_until_connected", &CMOOSCommClient::WaitUntilConnected)
-
-        .def("get_description", &CMOOSCommClient::GetDescription)
         .def("close", &CMOOSCommClient::Close)
 
         .def("get_published", &CMOOSCommClient::GetPublished)
         .def("get_registered", &CMOOSCommClient::GetRegistered)
+        .def("get_description", &CMOOSCommClient::GetDescription)
 
-        .def("is_registered_for", &CMOOSCommClient::IsRegisteredFor)
         .def("is_running", &CMOOSCommClient::IsRunning)
-
         .def("is_asynchronous", &CMOOSCommClient::IsAsynchronous)
+        .def("is_connected", &CMOOSCommClient::IsConnected)
+        .def("wait_until_connected", &CMOOSCommClient::WaitUntilConnected)
 
         .def("get_number_of_unread_messages", &CMOOSCommClient::GetNumberOfUnreadMessages)
         .def("get_number_of_unsent_messages", &CMOOSCommClient::GetNumberOfUnsentMessages)
-
         .def("get_number_bytes_sent", &CMOOSCommClient::GetNumBytesSent)
         .def("get_number_bytes_read", &CMOOSCommClient::GetNumBytesReceived)
-
         .def("get_number_messages_sent", &CMOOSCommClient::GetNumMsgsSent)
         .def("get_number_message_read", &CMOOSCommClient::GetNumMsgsReceived)
 
         .def("set_comms_control_timewarp_scale_factor", &CMOOSCommClient::SetCommsControlTimeWarpScaleFactor)
         .def("get_comms_control_timewarp_scale_factor", &CMOOSCommClient::GetCommsControlTimeWarpScaleFactor)
-
-
-        .def("set_quiet", &CMOOSCommClient::SetQuiet)
         .def("do_local_time_correction", &CMOOSCommClient::DoLocalTimeCorrection)
 
         .def("set_verbose_debug", &CMOOSCommClient::SetVerboseDebug)
         .def("set_comms_tick", &CMOOSCommClient::SetCommsTick)
+        .def("set_quiet", &CMOOSCommClient::SetQuiet)
+
+        .def("enable_comms_status_monitoring", &CMOOSCommClient::EnableCommsStatusMonitoring)
+        .def("get_client_comms_status", &CMOOSCommClient::GetClientCommsStatus)
+        .def("get_client_comms_statuses", &CMOOSCommClient::GetClientCommsStatuses)
+
 
 
         ;
@@ -269,32 +331,31 @@ BOOST_PYTHON_MODULE(pymoos)
 
     //this is the one to use
     bp::class_<MOOS::AsyncCommsWrapper, bp::bases<MOOS::MOOSAsyncCommClient>, boost::noncopyable >("comms")
+
               .def("run", &MOOS::AsyncCommsWrapper::Run)
               .def("fetch", &MOOS::AsyncCommsWrapper::FetchMailAsVector)
 
               .def("set_on_connect_callback", &MOOS::AsyncCommsWrapper::SetOnConnectCallback)
               .def("set_on_mail_callback", &MOOS::AsyncCommsWrapper::SetOnMailCallback)
-
               .def("notify_binary", &MOOS::AsyncCommsWrapper::NotifyBinary)
-
               .def("add_active_queue", &MOOS::AsyncCommsWrapper::AddActiveQueue)
+              .def("remove_message_route_to_active_queue",&MOOS::AsyncCommsWrapper::RemoveMessageRouteToActiveQueue)
+              .def("remove_active_queue",&MOOS::AsyncCommsWrapper::RemoveActiveQueue)
+              .def("has_active_queue",&MOOS::AsyncCommsWrapper::HasActiveQueue)
+              .def("print_message_to_active_queue_routing",&MOOS::AsyncCommsWrapper::PrintMessageToActiveQueueRouting)
+              .def("add_message_route_to_active_queue",
+                   static_cast< bool (CMOOSCommClient::*)(const std::string & ,const std::string & ) >
+                  (&MOOS::AsyncCommsWrapper::AddMessageRouteToActiveQueue))
 
               ;
 
 
-/*
-    bp::class_<World>("World")
-        .def("greet", &World::greet)
-        .def("set", &World::set)
-        .def("call", &World::call_wrap)
-        .def("f",static_cast< bool (World::*)(int) > (&World::f) )
-        .def("f",static_cast< bool (World::*)(int,int) > (&World::f) );
-
-    bp::def("call", &call_wrap);*/
-
     bp::def("time",&MOOSTime,time_overloads());
     bp::def("local_time",&MOOSLocalTime,time_overloads());
     bp::def("is_little_end_in",&IsLittleEndian);
+
+    bp::register_exception_translator<pyMOOSException>(&MOOSExceptionTranslator);
+
 
 }
 

@@ -12,13 +12,13 @@ endif()
 find_package(Boost REQUIRED python)
 set(Boost_USE_STATIC_LIBS     ON)
 set(Boost_USE_MULTITHREADED    ON)
-set(Boost_USE_STATIC_RUNTIME     OFF)
+set(Boost_USE_STATIC_RUNTIME     ON)
 
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${Boost_INCLUDE_DIRS} ${MOOS_INCLUDE_DIRS})
 
 set(src
-Comms.cpp
+pyMOOS.cpp
 ) 
 
 add_library(pymoos SHARED ${src})
@@ -31,10 +31,21 @@ set_target_properties( pymoos
 set_target_properties(pymoos
   PROPERTIES
   PREFIX "")
+  
+  
+  
+file(GLOB ExampleFiles ${CMAKE_SOURCE_DIR}/examples/*.py)
+add_custom_target(copy)
+get_target_property(pymoosLocation pymoos LOCATION)
+get_filename_component(pymoosDir ${pymoosLocation} PATH)
+foreach(ExampleFile ${ExampleFiles})
+  add_custom_command(TARGET copy PRE_BUILD
+                     COMMAND ${CMAKE_COMMAND} -E
+                         copy ${ExampleFile} ${pymoosDir})
+endforeach()
+add_dependencies(pymoos copy)  
+  
 
-#set_target_properties(pymoos
-#    PROPERTIES 
-#    SUFFIX ".pyd")
 
 
 TARGET_LINK_LIBRARIES(pymoos ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} ${MOOS_LIBRARIES})
