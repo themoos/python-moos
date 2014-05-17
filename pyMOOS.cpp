@@ -219,6 +219,7 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(notify_overloads_3_4, Notify, 3,4)
 
 BOOST_PYTHON_MODULE(pymoos)
 {
+    bp::docstring_options local_docstring_options(true, true, false);
 
     PyEval_InitThreads();
 
@@ -227,7 +228,7 @@ BOOST_PYTHON_MODULE(pymoos)
                      MOOSMsg e class
     *********************************************************************/
 
-    bp::class_<CMOOSMsg>("moos_msg")
+    bp::class_<CMOOSMsg>("moos_msg","Bar class")
             .def("time", &CMOOSMsg::GetTime)
             .def("trace",&CMOOSMsg::Trace)
 

@@ -2,10 +2,14 @@
 \lyxformat 413
 \begin_document
 \begin_header
-\textclass paper
+\textclass report
 \begin_preamble
 \usepackage{verbatim}
-%\usepackage{xcolor}
+
+
+
+
+
 \usepackage{listings}
 \usepackage{textcomp}
 \lstdefinestyle{Bash}
@@ -47,9 +51,14 @@ language=Python,
         stringstyle=\color[rgb]{0.627,0.126,0.941},
         backgroundcolor=\color{codebg},
 }
+
+
+\usepackage{titlesec}
+\titleformat{\title}[block]{\color{blue}\Large\bfseries\filcenter}{}{1em}{}
 \end_preamble
 \use_default_options true
 \begin_modules
+theorems-ams
 eqs-within-sections
 figs-within-sections
 logicalmkup
