@@ -235,6 +235,8 @@ BOOST_PYTHON_MODULE(pymoos)
             .def("name", &CMOOSMsg::GetKey)
             .def("key", &CMOOSMsg::GetKey)
             .def("is_name", &CMOOSMsg::IsName)
+            
+            .def("source", &CMOOSMsg::GetSource)
 
             .def("is_double", &CMOOSMsg::IsDouble)
 
