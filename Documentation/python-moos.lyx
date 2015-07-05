@@ -234,6 +234,7 @@ boost (http://www.boost.org) installed.
  Why you might ask? Well python-moos uses the boost python suite to facilitate
  binding MOOS to python.
  It is dead good.
+ You will need boost-python installed.
 \end_layout
 
 \begin_layout Subsection
