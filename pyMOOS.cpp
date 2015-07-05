@@ -81,6 +81,15 @@ public:
         return true;
     }
 
+    bool Close(bool nice)
+    {
+         Py_BEGIN_ALLOW_THREADS
+         //PyGILState_STATE gstate = PyGILState_Ensure();
+         BASE::Close(nice);
+         //PyGILState_Release(gstate);
+         Py_END_ALLOW_THREADS
+    }
+
 
     bool on_connect() {
 
@@ -355,6 +364,8 @@ BOOST_PYTHON_MODULE(pymoos)
     bp::class_<MOOS::AsyncCommsWrapper, bp::bases<MOOS::MOOSAsyncCommClient>,boost::noncopyable>("comms")
 
         .def("run", &MOOS::AsyncCommsWrapper::Run)
+        .def("close", &MOOS::AsyncCommsWrapper::Close)
+
         .def("fetch",&MOOS::AsyncCommsWrapper::FetchMailAsVector)
         .def("set_on_connect_callback",&MOOS::AsyncCommsWrapper::SetOnConnectCallback)
         .def("set_on_mail_callback",&MOOS::AsyncCommsWrapper::SetOnMailCallback)
