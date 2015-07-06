@@ -45,6 +45,18 @@ class AsyncCommsWrapper : public MOOS::MOOSAsyncCommClient {
 private:
     typedef MOOSAsyncCommClient BASE;
 public:
+    
+    ~AsyncCommsWrapper(){
+        //AsyncCommsWrapper::Close(true);
+        //BASE::~BASE();
+          Py_BEGIN_ALLOW_THREADS
+          //PyGILState_STATE gstate = PyGILState_Ensure();
+          BASE::Close(true);
+          //PyGILState_Release(gstate);
+          Py_END_ALLOW_THREADS
+
+    }    
+
 
     bool Run(const std::string & sServer, int Port, const std::string & sMyName) {
         return BASE::Run(sServer, Port, sMyName, 0);//Comms Tick not used in Async version
@@ -81,13 +93,12 @@ public:
         return true;
     }
 
-    bool Close(bool nice)
-    {
-         Py_BEGIN_ALLOW_THREADS
-         //PyGILState_STATE gstate = PyGILState_Ensure();
-         BASE::Close(nice);
-         //PyGILState_Release(gstate);
-         Py_END_ALLOW_THREADS
+    bool Close(bool nice){
+        Py_BEGIN_ALLOW_THREADS
+        //PyGILState_STATE gstate = PyGILState_Ensure();
+        this->BASE::~BASE();
+        //PyGILState_Release(gstate);
+        Py_END_ALLOW_THREADS
     }
 
 
