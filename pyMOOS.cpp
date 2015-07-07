@@ -26,7 +26,6 @@ struct pyMOOSException : std::exception {
     }
     char const* what() const throw () {
         return s_.c_str();
-        return "lala";/*return s_.c_str();*/
     }
     std::string s_;
 };
@@ -45,6 +44,10 @@ class AsyncCommsWrapper : public MOOS::MOOSAsyncCommClient {
 private:
     typedef MOOSAsyncCommClient BASE;
 public:
+    
+    ~AsyncCommsWrapper(){
+        Close(true);
+    }    
 
     bool Run(const std::string & sServer, int Port, const std::string & sMyName) {
         return BASE::Run(sServer, Port, sMyName, 0);//Comms Tick not used in Async version
@@ -81,13 +84,14 @@ public:
         return true;
     }
 
-    bool Close(bool nice)
-    {
-         Py_BEGIN_ALLOW_THREADS
-         //PyGILState_STATE gstate = PyGILState_Ensure();
-         BASE::Close(nice);
-         //PyGILState_Release(gstate);
-         Py_END_ALLOW_THREADS
+    bool Close(bool nice){
+        Py_BEGIN_ALLOW_THREADS
+        //PyGILState_STATE gstate = PyGILState_Ensure();
+        closing_ = true;
+        BASE::Close(true);
+        
+        //PyGILState_Release(gstate);
+        Py_END_ALLOW_THREADS
     }
 
 
@@ -124,13 +128,14 @@ public:
     }
 
     bool on_mail() {
-
         bool bResult = false;
 
         PyGILState_STATE gstate = PyGILState_Ensure();
         try {
-            bp::object result = on_mail_object_();
-            bResult = bp::extract<bool>(result);
+            if(!closing_){
+                bp::object result = on_mail_object_();
+                bResult = bp::extract<bool>(result);
+            }
         } catch (const bp::error_already_set& e) {
             PyGILState_Release(gstate);
             throw pyMOOSException(
@@ -140,7 +145,6 @@ public:
         PyGILState_Release(gstate);
 
         return bResult;
-
     }
 
     static bool active_queue_delegate(CMOOSMsg & M, void* pParam) {
@@ -209,7 +213,9 @@ private:
     /** callback functions (stored) */
     bp::object on_connect_object_;
     bp::object on_mail_object_;
-
+    
+    /** close connection flag */
+    bool closing_;
 };
 }
 ;//namesapce

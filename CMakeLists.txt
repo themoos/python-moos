@@ -26,8 +26,6 @@ if(NOT DEFINED CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
 endif()
 
 
-
-
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${Boost_INCLUDE_DIRS} ${MOOS_INCLUDE_DIRS})
 
 set(src
@@ -46,7 +44,6 @@ set_target_properties(pymoos
   PREFIX "")
   
   
-  
 file(GLOB ExampleFiles ${CMAKE_SOURCE_DIR}/Documentation/examples/*.py)
 add_custom_target(copy)
 get_target_property(pymoosLocation pymoos LOCATION)
@@ -56,13 +53,7 @@ foreach(ExampleFile ${ExampleFiles})
                      COMMAND ${CMAKE_COMMAND} -E
                          copy ${ExampleFile} ${pymoosDir})
 endforeach()
-add_dependencies(pymoos copy)  
-  
-
+add_dependencies(pymoos copy)    
 
 
 TARGET_LINK_LIBRARIES(pymoos ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} ${MOOS_LIBRARIES})
-
-
-                       
-                       
