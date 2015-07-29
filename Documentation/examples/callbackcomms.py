@@ -13,6 +13,7 @@ def c():
 
 def m():
     map(lambda msg: msg.trace(), comms.fetch() )
+    return True
         
 def main():
     
