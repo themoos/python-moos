@@ -85,13 +85,17 @@ public:
     }
 
     bool Close(bool nice){
+        bool bResult = false;
+
         Py_BEGIN_ALLOW_THREADS
         //PyGILState_STATE gstate = PyGILState_Ensure();
         closing_ = true;
-        BASE::Close(true);
+        bResult = BASE::Close(true);
         
         //PyGILState_Release(gstate);
         Py_END_ALLOW_THREADS
+        
+        return bResult;
     }
 
 
@@ -398,4 +402,3 @@ BOOST_PYTHON_MODULE(pymoos)
     bp::register_exception_translator<pyMOOSException>(&MOOSExceptionTranslator);
 
 }
-
