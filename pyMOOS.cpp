@@ -398,6 +398,8 @@ BOOST_PYTHON_MODULE(pymoos)
     bp::def("time", &MOOSTime, time_overloads());
     bp::def("local_time", &MOOSLocalTime, time_overloads());
     bp::def("is_little_end_in", &IsLittleEndian);
+    bp::def("set_moos_timewarp", &SetMOOSTimeWarp);
+    bp::def("get_moos_timewarp", &GetMOOSTimeWarp);
 
     bp::register_exception_translator<pyMOOSException>(&MOOSExceptionTranslator);
 
