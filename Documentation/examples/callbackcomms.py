@@ -22,13 +22,17 @@ def main():
     
     comms.set_on_connect_callback(c)
     comms.set_on_mail_callback(m)
-    pymoos.set_moos_timewarp(10)
+    pymoos.set_moos_timewarp(20)
     comms.set_comms_control_timewarp_scale_factor(0.4)
     comms.run('localhost',9000,'pymoos')
 
+    last_time = time.time()
+
     while True:
-        time.sleep(1)
+        time.sleep(1.0)
+        # if time.time() - last_time > 1.0:
         comms.notify('simple_var','a string',pymoos.time())
+            # last_time = time.time()
     
 if __name__=="__main__":
     main()
