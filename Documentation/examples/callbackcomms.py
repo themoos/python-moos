@@ -9,9 +9,6 @@ import time
 comms = pymoos.comms()
 
 def c():
-    print("\t|-Time Warp @ {0:.1f} \n".format(pymoos.get_moos_timewarp()))
-    print("\t|-Time Warp delay @ {0:.1f} ms \n".format( \
-        comms.get_comms_control_timewarp_scale_factor()*pymoos.get_moos_timewarp()))
     return comms.register('simple_var',0)
 
 def m():
@@ -20,19 +17,13 @@ def m():
         
 def main():
     
-    comms.set_on_connect_callback(c)
-    comms.set_on_mail_callback(m)
-    pymoos.set_moos_timewarp(20)
-    comms.set_comms_control_timewarp_scale_factor(0.4)
+    comms.set_on_connect_callback(c);
+    comms.set_on_mail_callback(m);
     comms.run('localhost',9000,'pymoos')
 
-    last_time = time.time()
-
     while True:
-        time.sleep(1.0)
-        # if time.time() - last_time > 1.0:
-        comms.notify('simple_var','a string',pymoos.time())
-            # last_time = time.time()
+        time.sleep(1)
+        comms.notify('simple_var','a string',pymoos.time());
     
 if __name__=="__main__":
     main()
