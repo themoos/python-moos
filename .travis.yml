@@ -19,8 +19,8 @@ env:
 
 before_script:
     - if [ "`uname`" != "Darwin" ] ; then export MOOS_CXX_FLAGS="-fPIC -Wno-long-long"; fi
-    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update                     ; fi
-    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install boost boost-python ; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update               ; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install boost-python ; fi
     - cd ..
     - git clone -b wOnlineCI --depth=1 https://github.com/msis/core-moos
     - cd core-moos
