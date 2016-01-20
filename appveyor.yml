@@ -33,7 +33,7 @@ init:
 
 build_script:
     - cd build
-    - cmake -G "%VS_FULL%" -DCMAKE_BUILD_TYPE=$BUILD_TYPE ../
+    - cmake -G "%VS_FULL%" -DBOOST_ROOT="C:\Libraries\boost_1_59_0" -DCMAKE_BUILD_TYPE=$BUILD_TYPE ../
     - cmake --build . --config Release
 
 on_success:
