@@ -107,7 +107,7 @@ if (WIN32)
   set_target_properties(pymoos PROPERTIES SUFFIX ".pyd")
 
   # Link against the Python shared library
-  target_link_libraries(pymoos ${PYTHON_LIBRARY})
+  target_link_libraries(pymoos ${PYTHON_LIBRARY} ${MOOS_LIBRARIES})
 elseif (UNIX)
   # It's quite common to have multiple copies of the same Python version
   # installed on one's system. E.g.: one copy from the OS and another copy
@@ -138,6 +138,8 @@ elseif (UNIX)
       add_custom_command(TARGET pymoos POST_BUILD COMMAND strip ${PROJECT_BINARY_DIR}/pymoos.so)
     endif()
   endif()
+
+  target_link_libraries(pymoos ${PYTHON_LIBRARIES} ${MOOS_LIBRARIES})
 endif()
 #########################################################daaS
 
@@ -156,6 +158,3 @@ foreach(ExampleFile ${ExampleFiles})
                          copy ${ExampleFile} ${pymoosDir})
 endforeach()
 add_dependencies(pymoos copy)
-
-
-# TARGET_LINK_LIBRARIES(pymoos ${PYTHON_LIBRARIES} ${MOOS_LIBRARIES})
