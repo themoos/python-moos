@@ -4,9 +4,12 @@
 #include "MOOS/libMOOS/Comms/MOOSAsyncCommClient.h"
 
 #include <pybind11/pybind11.h>
+#include <pybind11/stl_bind.h>
 
 typedef std::vector<CMOOSMsg> MsgVector;
+PYBIND11_MAKE_OPAQUE(MsgVector);
 typedef std::vector<MOOS::ClientCommsStatus> CommsStatusVector;
+PYBIND11_MAKE_OPAQUE(CommsStatusVector);
 
 namespace py = pybind11;
 
@@ -85,11 +88,15 @@ public:
         bool bResult = false;
 
         Py_BEGIN_ALLOW_THREADS
+        // TODO: verify that the following two lines are equivalent.
         //PyGILState_STATE gstate = PyGILState_Ensure();
+        py::gil_scoped_acquire acquire;
         closing_ = true;
         bResult = BASE::Close(true);
 
+        // TODO: verify that the following two lines are equivalent.
         //PyGILState_Release(gstate);
+        py::gil_scoped_release release;
         Py_END_ALLOW_THREADS
 
         return bResult;
@@ -100,17 +107,23 @@ public:
 
         bool bResult = false;
 
-        PyGILState_STATE gstate = PyGILState_Ensure();
+        // TODO: verify that the following two lines are equivalent.
+        // PyGILState_STATE gstate = PyGILState_Ensure();
+        py::gil_scoped_acquire acquire;
         try {
-            py::object result = on_connect_object_.call();
+            py::object result = on_connect_object_();
             bResult = py::bool_(result);
         } catch (const py::error_already_set& e) {
-            PyGILState_Release(gstate);
+            // TODO: verify that the following two lines are equivalent.
+            // PyGILState_Release(gstate);
+            py::gil_scoped_release release;
             throw pyMOOSException(
                                   "OnConnect:: caught an exception thrown in python callback");
         }
 
-        PyGILState_Release(gstate);
+        // TODO: verify that the following two lines are equivalent.
+        // PyGILState_Release(gstate);
+        py::gil_scoped_release release;
 
         return bResult;
 
@@ -131,19 +144,25 @@ public:
     bool on_mail() {
         bool bResult = false;
 
-        PyGILState_STATE gstate = PyGILState_Ensure();
+        // TODO: verify that the following two lines are equivalent.
+        // PyGILState_STATE gstate = PyGILState_Ensure();
+        py::gil_scoped_acquire acquire;
         try {
             if(!closing_){
-                py::object result = on_mail_object_.call();
+                py::object result = on_mail_object_();
                 bResult = py::bool_(result);
             }
         } catch (const py::error_already_set& e) {
-            PyGILState_Release(gstate);
+            // TODO: verify that the following two lines are equivalent.
+            // PyGILState_Release(gstate);
+            py::gil_scoped_release release;
             throw pyMOOSException(
                                   "OnMail:: caught an exception thrown in python callback");
         }
 
-        PyGILState_Release(gstate);
+        // TODO: verify that the following two lines are equivalent.
+        // PyGILState_Release(gstate);
+        py::gil_scoped_release release;
 
         return bResult;
     }
@@ -165,17 +184,23 @@ public:
 
         bool bResult = false;
 
-        PyGILState_STATE gstate = PyGILState_Ensure();
+        // TODO: verify that the following two lines are equivalent.
+        // PyGILState_STATE gstate = PyGILState_Ensure();
+        py::gil_scoped_acquire acquire;
         try {
-            py::object result = q->second->func_.call(M);
+            py::object result = q->second->func_(M);
             bResult = py::bool_(result);
         } catch (const py::error_already_set& e) {
-            PyGILState_Release(gstate);
+            // TODO: verify that the following two lines are equivalent.
+            // PyGILState_Release(gstate);
+            py::gil_scoped_release release;
             throw pyMOOSException(
                                   "ActiveQueue:: caught an exception thrown in python callback");
         }
 
-        PyGILState_Release(gstate);
+        // TODO: verify that the following two lines are equivalent.
+        // PyGILState_Release(gstate);
+        py::gil_scoped_release release;
 
         return bResult;
 
@@ -221,17 +246,6 @@ private:
 }
 ;//namesapce
 
-////////////////////////////////////////////////////////////////////////////////////////////
-/**                   here comes the boost python stuff                                   */
-////////////////////////////////////////////////////////////////////////////////////////////
-// BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(f_overloads, f, 1, 2)
-// ;
-// BOOST_PYTHON_FUNCTION_OVERLOADS(time_overloads, MOOSTime, 0, 1)
-// ;
-// BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(notify_overloads_2_3, Notify, 2,3)
-// ;
-// BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(notify_overloads_3_4, Notify, 3,4)
-// ;
 
 PYBIND11_PLUGIN(pymoos)
 {
@@ -275,8 +289,9 @@ PYBIND11_PLUGIN(pymoos)
     *********************************************************************/
 
     //TODO: fix this conversion
-    py::class_<MsgVector>(m,"moos_msg_list");
+    // py::class_<MsgVector>(m,"moos_msg_list");
             // .def(py::vector_indexing_suite<MsgVector>());
+    py::bind_vector<MsgVector>(m, "moos_msg_list");
 
 
     /*********************************************************************
@@ -293,9 +308,10 @@ PYBIND11_PLUGIN(pymoos)
     *********************************************************************/
 
     //TODO: fix this conversion
-    py::class_<CommsStatusVector>(m,"moos_comms_status_list");
+    // py::class_<CommsStatusVector>(m,"moos_comms_status_list");
     // py::class_<CommsStatusVector>("moos_comms_status_list")
             // .def(py::vector_indexing_suite<CommsStatusVector>());
+    py::bind_vector<CommsStatusVector>(m, "moos_comms_status_list");
 
 
     /*********************************************************************
@@ -310,15 +326,15 @@ PYBIND11_PLUGIN(pymoos)
                      synchronous comms base class
     *********************************************************************/
     //TODO: noncopyable & no_init
-    py::class_<CMOOSCommClient>(m, "base_sync_comms", py::base<CMOOSCommObject>() )
+    py::class_<CMOOSCommClient, CMOOSCommObject>(m, "base_sync_comms" )
     // py::class_<CMOOSCommClient, py::base<CMOOSCommObject>, boost::noncopyable>("base_sync_comms",py::no_init)
 
         .def("register",static_cast<bool(CMOOSCommClient::*)(const std::string&, double)> (&CMOOSCommClient::Register))
         .def("register",static_cast<bool(CMOOSCommClient::*)(const std::string&,const std::string&,double)> (&CMOOSCommClient::Register))
         .def("is_registered_for",&CMOOSCommClient::IsRegisteredFor)
 
-        // .def("notify",static_cast<bool(CMOOSCommClient::*)(const std::string&,const std::string&, double)> (&CMOOSCommClient::Notify),notify_overloads_2_3())
-        // .def("notify",static_cast<bool(CMOOSCommClient::*)(const std::string&,const std::string&,const std::string&,double)> (&CMOOSCommClient::Notify),notify_overloads_2_3())
+        .def("notify",static_cast<bool(CMOOSCommClient::*)(const std::string&,const std::string&, double)> (&CMOOSCommClient::Notify), py::arg("sVar"), py::arg("sVal"), py::arg("dfTime") = -1.)
+        .def("notify",static_cast<bool(CMOOSCommClient::*)(const std::string&,const std::string&, const std::string&,double)> (&CMOOSCommClient::Notify), py::arg("sVar"), py::arg("sVal"), py::arg("sSrcAux"), py::arg("dfTime") = -1.)
         .def("notify",static_cast<bool(CMOOSCommClient::*)(const std::string&,const char *,double)> (&CMOOSCommClient::Notify))
         .def("notify",static_cast<bool(CMOOSCommClient::*)(const std::string&,const char *,const std::string&,double)> (&CMOOSCommClient::Notify))
         .def("notify",static_cast<bool(CMOOSCommClient::*)(const std::string&,double,double)> (&CMOOSCommClient::Notify))
@@ -364,9 +380,7 @@ PYBIND11_PLUGIN(pymoos)
                      Asynchronous comms base class
     *********************************************************************/
 
-    //TODO: noncopyable & no_init
-    // py::class_<MOOS::MOOSAsyncCommClient, py::base<CMOOSCommClient>,boost::noncopyable>("base_async_comms", py::no_init)
-    py::class_<MOOS::MOOSAsyncCommClient>(m, "base_async_comms", py::base<CMOOSCommClient>())
+    py::class_<MOOS::MOOSAsyncCommClient, CMOOSCommClient>(m, "base_async_comms")
             .def("run",&MOOS::MOOSAsyncCommClient::Run);
 
 
@@ -380,9 +394,7 @@ PYBIND11_PLUGIN(pymoos)
     // /** FINALLY HERE IS THE CLASS WE EXPECT TO BE INSTANTIATED IN PYTHON */
     // /*********************************************************************/
     //this is the one to use
-    //TODO: noncopyable
-    // py::class_<MOOS::AsyncCommsWrapper, py::base<MOOS::MOOSAsyncCommClient>,boost::noncopyable>("comms")
-    py::class_<MOOS::AsyncCommsWrapper>(m, "comms", py::base<MOOS::MOOSAsyncCommClient>() )
+    py::class_<MOOS::AsyncCommsWrapper, MOOS::MOOSAsyncCommClient>(m, "comms")
         .def(py::init<>())
 
         .def("run", &MOOS::AsyncCommsWrapper::Run)
@@ -407,14 +419,15 @@ PYBIND11_PLUGIN(pymoos)
     *********************************************************************/
 
     /** here are some global help functions */
+    m.def("local_time", &MOOSLocalTime, py::arg("bApplyTimeWarping") = true);
     m.def("time", &MOOSTime, py::arg("bApplyTimeWarping") = true);
-    // m.def("local_time", &MOOSLocalTime, time_overloads());
     m.def("is_little_end_in", &IsLittleEndian);
     m.def("set_moos_timewarp", &SetMOOSTimeWarp);
     m.def("get_moos_timewarp", &GetMOOSTimeWarp);
 
     // TODO: double check that it's still needed
     // py::register_exception_translator<pyMOOSException>(&MOOSExceptionTranslator);
+    // py::register_exception<pyMOOSException>(m, "MOOSExcep");
 
     return m.ptr();
 }

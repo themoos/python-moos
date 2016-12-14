@@ -1,7 +1,7 @@
 /*
     pybind11/operator.h: Metatemplates for operator overloading
 
-    Copyright (c) 2015 Wenzel Jakob <wenzel@inf.ethz.ch>
+    Copyright (c) 2016 Wenzel Jakob <wenzel.jakob@epfl.ch>
 
     All rights reserved. Use of this source code is governed by a
     BSD-style license that can be found in the LICENSE file.
@@ -10,7 +10,10 @@
 #pragma once
 
 #include "pybind11.h"
-#include <type_traits>
+
+#if defined(__clang__) && !defined(__INTEL_COMPILER)
+#  pragma clang diagnostic ignored "-Wunsequenced" // multiple unsequenced modifications to 'self' (when using def(py::self OP Type()))
+#endif
 
 NAMESPACE_BEGIN(pybind11)
 NAMESPACE_BEGIN(detail)
@@ -45,17 +48,19 @@ template <op_id, op_type, typename B, typename L, typename R> struct op_impl { }
 
 /// Operator implementation generator
 template <op_id id, op_type ot, typename L, typename R> struct op_ {
-    template <typename Base, typename Holder, typename... Extra> void execute(pybind11::class_<Base, Holder> &class_, const Extra&... extra) const {
+    template <typename Class, typename... Extra> void execute(Class &cl, const Extra&... extra) const {
+        typedef typename Class::type Base;
         typedef typename std::conditional<std::is_same<L, self_t>::value, Base, L>::type L_type;
         typedef typename std::conditional<std::is_same<R, self_t>::value, Base, R>::type R_type;
         typedef op_impl<id, ot, Base, L_type, R_type> op;
-        class_.def(op::name(), &op::execute, extra...);
+        cl.def(op::name(), &op::execute, is_operator(), extra...);
     }
-    template <typename Base, typename Holder, typename... Extra> void execute_cast(pybind11::class_<Base, Holder> &class_, const Extra&... extra) const {
+    template <typename Class, typename... Extra> void execute_cast(Class &cl, const Extra&... extra) const {
+        typedef typename Class::type Base;
         typedef typename std::conditional<std::is_same<L, self_t>::value, Base, L>::type L_type;
         typedef typename std::conditional<std::is_same<R, self_t>::value, Base, R>::type R_type;
         typedef op_impl<id, ot, Base, L_type, R_type> op;
-        class_.def(op::name(), &op::execute_cast, extra...);
+        cl.def(op::name(), &op::execute_cast, is_operator(), extra...);
     }
 };
 
@@ -72,13 +77,13 @@ template <typename B, typename L, typename R> struct op_impl<op_##id, op_r, B, L
 };                                                                                     \
 inline op_<op_##id, op_l, self_t, self_t> op(const self_t &, const self_t &) {         \
     return op_<op_##id, op_l, self_t, self_t>();                                       \
-};                                                                                     \
+}                                                                                      \
 template <typename T> op_<op_##id, op_l, self_t, T> op(const self_t &, const T &) {    \
     return op_<op_##id, op_l, self_t, T>();                                            \
-};                                                                                     \
+}                                                                                      \
 template <typename T> op_<op_##id, op_r, T, self_t> op(const T &, const self_t &) {    \
     return op_<op_##id, op_r, T, self_t>();                                            \
-};
+}
 
 #define PYBIND11_INPLACE_OPERATOR(id, op, expr)                                          \
 template <typename B, typename L, typename R> struct op_impl<op_##id, op_l, B, L, R> { \
@@ -88,7 +93,7 @@ template <typename B, typename L, typename R> struct op_impl<op_##id, op_l, B, L
 };                                                                                     \
 template <typename T> op_<op_##id, op_l, self_t, T> op(const self_t &, const T &) {    \
     return op_<op_##id, op_l, self_t, T>();                                            \
-};
+}
 
 #define PYBIND11_UNARY_OPERATOR(id, op, expr)                                            \
 template <typename B, typename L> struct op_impl<op_##id, op_u, B, L, undefined_t> {   \
@@ -98,7 +103,7 @@ template <typename B, typename L> struct op_impl<op_##id, op_u, B, L, undefined_
 };                                                                                     \
 inline op_<op_##id, op_u, self_t, undefined_t> op(const self_t &) {                    \
     return op_<op_##id, op_u, self_t, undefined_t>();                                  \
-};
+}
 
 PYBIND11_BINARY_OPERATOR(sub,       rsub,         operator-,    l - r)
 PYBIND11_BINARY_OPERATOR(add,       radd,         operator+,    l + r)
