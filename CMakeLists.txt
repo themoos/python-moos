@@ -1,92 +1,19 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.12)
 project (python-moos)
 find_package(MOOS 10 REQUIRED)
-#
-# find_package(PythonLibs)
-# if(PYTHONLIBS_FOUND)
-#   include_directories("${PYTHON_INCLUDE_DIRS}")
-# else()
-#   message(FATAL_ERROR "Unable to find PythonLibs.")
-# endif()
-#
-# find_package(Boost REQUIRED python)
-# set(Boost_USE_STATIC_LIBS     ON)
-# set(Boost_USE_MULTITHREADED    ON)
-# set(Boost_USE_STATIC_RUNTIME     ON)
 
-#########################################################Saad
-# Try to autodetect Python (can be overridden manually if needed)
-set(Python_ADDITIONAL_VERSIONS 3.4 3.5 3.6 3.7)
-if (NOT ${EXAMPLE_PYTHON_VERSION} STREQUAL "")
-  find_package(PythonLibs ${EXAMPLE_PYTHON_VERSION} EXACT)
-  if (NOT PythonLibs_FOUND)
-    find_package(PythonLibs ${EXAMPLE_PYTHON_VERSION} REQUIRED)
-  endif()
-else()
-  find_package(PythonLibs REQUIRED)
-endif()
+add_subdirectory(pybind11)
+pybind11_add_module(pymoos pyMOOS.cpp)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${MOOS_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIR})
 
-# Uncomment the following line if you will also require a matching Python interpreter
-# find_package(PythonInterp ${PYTHONLIBS_VERSION_STRING} EXACT REQUIRED)
+set_target_properties(pymoos
+  PROPERTIES
+  SUFFIX ".so")
 
-include(CheckCXXCompilerFlag)
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-  CHECK_CXX_COMPILER_FLAG("-std=c++14" HAS_CPP14_FLAG)
-  CHECK_CXX_COMPILER_FLAG("-std=c++11" HAS_CPP11_FLAG)
+set_target_properties(pymoos
+  PROPERTIES
+  PREFIX "")
 
-  if (HAS_CPP14_FLAG)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-  elseif (HAS_CPP11_FLAG)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-  else()
-    message(FATAL_ERROR "Unsupported compiler -- at least C++11 support is needed!")
-  endif()
-
-  # Enable link time optimization and set the default symbol
-  # visibility to hidden (very important to obtain small binaries)
-  if (NOT ${U_CMAKE_BUILD_TYPE} MATCHES DEBUG)
-    # Default symbol visibility
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
-
-    # Check for Link Time Optimization support
-    CHECK_CXX_COMPILER_FLAG("-flto" HAS_LTO_FLAG)
-    if (HAS_LTO_FLAG)
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
-    endif()
-  endif()
-endif()
-#########################################################daaS
-
-if(NOT DEFINED CMAKE_RUNTIME_OUTPUT_DIRECTORY)
-  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
-endif()
-
-if(NOT DEFINED CMAKE_LIBRARY_OUTPUT_DIRECTORY)
-  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
-endif()
-if(NOT DEFINED CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
-  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
-endif()
-
-
-# include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${Boost_INCLUDE_DIRS} ${MOOS_INCLUDE_DIRS})
-#########################################################Saad
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${MOOS_INCLUDE_DIRS})
-include_directories(${PYTHON_INCLUDE_DIR})
-include_directories(${PYTHON_INCLUDE_DIR})
-include_directories(${PROJECT_SOURCE_DIR}/pybind11)
-#########################################################daaS
-
-set(src
-  pyMOOS.cpp
-)
-
-add_library(pymoos SHARED ${src})
-
-# set_target_properties( pymoos
-#     PROPERTIES
-#     SUFFIX ".so"
-# )
 #########################################################Saad
 if (WIN32)
   if (MSVC)
@@ -141,12 +68,6 @@ elseif (UNIX)
 
   target_link_libraries(pymoos ${PYTHON_LIBRARIES} ${MOOS_LIBRARIES})
 endif()
-#########################################################daaS
-
-set_target_properties(pymoos
-  PROPERTIES
-  PREFIX "")
-
 
 file(GLOB ExampleFiles ${CMAKE_SOURCE_DIR}/Documentation/examples/*.py)
 add_custom_target(copy)
