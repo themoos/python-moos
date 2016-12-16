@@ -249,8 +249,6 @@ private:
 
 PYBIND11_PLUGIN(pymoos)
 {
-    // py::docstring_options local_docstring_options(true, true, false);
-
     py::module m("pymoos", "python wrapping for MOOS.");
 
     PyEval_InitThreads();
@@ -288,9 +286,6 @@ PYBIND11_PLUGIN(pymoos)
                      vector of messages
     *********************************************************************/
 
-    //TODO: fix this conversion
-    // py::class_<MsgVector>(m,"moos_msg_list");
-            // .def(py::vector_indexing_suite<MsgVector>());
     py::bind_vector<MsgVector>(m, "moos_msg_list");
 
 
@@ -307,10 +302,6 @@ PYBIND11_PLUGIN(pymoos)
                      vector of communications status classes
     *********************************************************************/
 
-    //TODO: fix this conversion
-    // py::class_<CommsStatusVector>(m,"moos_comms_status_list");
-    // py::class_<CommsStatusVector>("moos_comms_status_list")
-            // .def(py::vector_indexing_suite<CommsStatusVector>());
     py::bind_vector<CommsStatusVector>(m, "moos_comms_status_list");
 
 
@@ -318,16 +309,12 @@ PYBIND11_PLUGIN(pymoos)
                      comms base class
     *********************************************************************/
 
-    //TODO: fix no_init
     py::class_<CMOOSCommObject>(m,"base_comms_object");
-    // py::class_<CMOOSCommObject>("base_comms_object", py::no_init);
 
     /*********************************************************************
                      synchronous comms base class
     *********************************************************************/
-    //TODO: noncopyable & no_init
     py::class_<CMOOSCommClient, CMOOSCommObject>(m, "base_sync_comms" )
-    // py::class_<CMOOSCommClient, py::base<CMOOSCommObject>, boost::noncopyable>("base_sync_comms",py::no_init)
 
         .def("register",static_cast<bool(CMOOSCommClient::*)(const std::string&, double)> (&CMOOSCommClient::Register))
         .def("register",static_cast<bool(CMOOSCommClient::*)(const std::string&,const std::string&,double)> (&CMOOSCommClient::Register))
