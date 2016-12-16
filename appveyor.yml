@@ -28,7 +28,6 @@ shallow_clone: true
 
 install:
 - ps: |
-    if ($env:PLATFORM -eq "x64") { $env:CMAKE_ARCH = "x64" }
     if ($env:PYTHON) {
       if ($env:PLATFORM -eq "x64") { $env:PYTHON = "$env:PYTHON-x64" }
       $env:PATH = "C:\Python$env:PYTHON\;C:\Python$env:PYTHON\Scripts\;$env:PATH"
@@ -52,10 +51,9 @@ init:
     - cmake -G "%VS_FULL%" -DENABLE_EXPORT=ON -DUSE_ASYNC_COMMS=ON -DTIME_WARP_AGGLOMERATION=0.4 -DCMAKE_BUILD_TYPE=$BUILD_TYPE ../
     - cmake --build . --config Release
     - cmake --build . --config Release --target install
-    - cd %APPVEYOR_BUILD_FOLDER%
-    - mkdir build
 
 build_script:
+    - mkdir build
     - cd build
     - cmake -G "%VS_FULL%" -DCMAKE_BUILD_TYPE=$BUILD_TYPE ../
     - cmake --build . --config Release
