@@ -8,10 +8,10 @@ environment:
     matrix:
     - BUILD_TYPE: cmake
       VS_VERSION: Visual Studio 11 2012
-    
+
     - BUILD_TYPE: cmake
       VS_VERSION: Visual Studio 12 2013
-      
+
     - BUILD_TYPE: cmake
       VS_VERSION: Visual Studio 14 2015
 
@@ -28,14 +28,12 @@ init:
     - cmake -G "%VS_FULL%" -DENABLE_EXPORT=ON -DUSE_ASYNC_COMMS=ON -DTIME_WARP_AGGLOMERATION=0.4 -DCMAKE_BUILD_TYPE=$BUILD_TYPE ../
     - cmake --build . --config Release
     - cmake --build . --config Release --target install
-    - cd C:\Libraries\boost_1_59_0\
-    - .\bjam --with-python python-debugging=off threading=multi variant=release link=shared stage
     - cd %APPVEYOR_BUILD_FOLDER%
     - mkdir build
 
 build_script:
     - cd build
-    - cmake -G "%VS_FULL%" -DBOOST_ROOT="C:\Libraries\boost_1_59_0" -DCMAKE_BUILD_TYPE=$BUILD_TYPE ../
+    - cmake -G "%VS_FULL%" -DCMAKE_BUILD_TYPE=$BUILD_TYPE ../
     - cmake --build . --config Release
 
 on_success:
