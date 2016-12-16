@@ -6,16 +6,40 @@ platform:
 
 environment:
     matrix:
-    - BUILD_TYPE: cmake
+    - CONDA: 27
       VS_VERSION: Visual Studio 11 2012
 
-    - BUILD_TYPE: cmake
+    - CONDA: 35
+      VS_VERSION: Visual Studio 11 2012
+
+    - CONDA: 27
       VS_VERSION: Visual Studio 12 2013
 
-    - BUILD_TYPE: cmake
+    - CONDA: 35
+      VS_VERSION: Visual Studio 12 2013
+
+    - CONDA: 27
+      VS_VERSION: Visual Studio 14 2015
+
+    - CONDA: 35
       VS_VERSION: Visual Studio 14 2015
 
 shallow_clone: true
+
+install:
+- ps: |
+    if ($env:PLATFORM -eq "x64") { $env:CMAKE_ARCH = "x64" }
+    if ($env:PYTHON) {
+      if ($env:PLATFORM -eq "x64") { $env:PYTHON = "$env:PYTHON-x64" }
+      $env:PATH = "C:\Python$env:PYTHON\;C:\Python$env:PYTHON\Scripts\;$env:PATH"
+      pip install --disable-pip-version-check --user --upgrade pip wheel
+      pip install numpy scipy
+    } elseif ($env:CONDA) {
+      if ($env:CONDA -eq "27") { $env:CONDA = "" }
+      if ($env:PLATFORM -eq "x64") { $env:CONDA = "$env:CONDA-x64" }
+      $env:PATH = "C:\Miniconda$env:CONDA\;C:\Miniconda$env:CONDA\Scripts\;$env:PATH"
+      conda install -y -q numpy scipy
+    }
 
 init:
     - if "%platform%" == "x64" SET VS_FULL=%VS_VERSION% Win64
