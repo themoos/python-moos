@@ -34,7 +34,7 @@ if (WIN32)
   set_target_properties(pymoos PROPERTIES SUFFIX ".pyd")
 
   # Link against the Python shared library
-  target_link_libraries(pymoos ${PYTHON_LIBRARY} ${MOOS_LIBRARIES})
+  target_link_libraries(pymoos PUBLIC ${PYTHON_LIBRARY} ${MOOS_LIBRARIES})
 elseif (UNIX)
   # It's quite common to have multiple copies of the same Python version
   # installed on one's system. E.g.: one copy from the OS and another copy
