@@ -80,3 +80,22 @@ foreach(ExampleFile ${ExampleFiles})
                          copy ${ExampleFile} ${pymoosDir})
 endforeach()
 add_dependencies(pymoos copy)
+
+
+execute_process(COMMAND
+    ${PYTHON_EXECUTABLE} -c "import distutils.sysconfig, sys; sys.stdout.write(distutils.sysconfig.get_python_lib(1,0,\"\"))"
+    OUTPUT_VARIABLE PYTHON_INSTALL
+    ERROR_VARIABLE PYTHON_STDERR
+    RESULT_VARIABLE PYTHON_ERR
+)
+if(NOT PYTHON_INSTDIR)
+  set(PYTHON_INSTDIR ${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL})
+endif(NOT PYTHON_INSTDIR)
+if(WIN32)
+  string(REGEX REPLACE "\\\\" "/" PYTHON_INSTDIR ${PYTHON_INSTDIR})
+endif(WIN32)
+message(STATUS "pymoos will be installed in ${PYTHON_INSTDIR}")
+INSTALL(FILES ${CMAKE_BINARY_DIR}/pymoos.so
+              __init__.py
+    DESTINATION ${PYTHON_INSTDIR}/pymoos/
+)
