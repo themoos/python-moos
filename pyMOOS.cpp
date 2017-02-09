@@ -88,15 +88,11 @@ public:
         bool bResult = false;
 
         Py_BEGIN_ALLOW_THREADS
-        // TODO: verify that the following two lines are equivalent.
-        //PyGILState_STATE gstate = PyGILState_Ensure();
-        py::gil_scoped_acquire acquire;
+        PyGILState_STATE gstate = PyGILState_Ensure();
         closing_ = true;
         bResult = BASE::Close(true);
 
-        // TODO: verify that the following two lines are equivalent.
-        //PyGILState_Release(gstate);
-        py::gil_scoped_release release;
+        PyGILState_Release(gstate);
         Py_END_ALLOW_THREADS
 
         return bResult;
@@ -108,22 +104,18 @@ public:
         bool bResult = false;
 
         // TODO: verify that the following two lines are equivalent.
-        // PyGILState_STATE gstate = PyGILState_Ensure();
-        py::gil_scoped_acquire acquire;
+        PyGILState_STATE gstate = PyGILState_Ensure();
+        // py::gil_scoped_acquire acquire;
         try {
             py::object result = on_connect_object_();
             bResult = py::bool_(result);
         } catch (const py::error_already_set& e) {
-            // TODO: verify that the following two lines are equivalent.
-            // PyGILState_Release(gstate);
-            py::gil_scoped_release release;
+            PyGILState_Release(gstate);
             throw pyMOOSException(
                                   "OnConnect:: caught an exception thrown in python callback");
         }
 
-        // TODO: verify that the following two lines are equivalent.
-        // PyGILState_Release(gstate);
-        py::gil_scoped_release release;
+        PyGILState_Release(gstate);
 
         return bResult;
 
@@ -144,25 +136,19 @@ public:
     bool on_mail() {
         bool bResult = false;
 
-        // TODO: verify that the following two lines are equivalent.
-        // PyGILState_STATE gstate = PyGILState_Ensure();
-        py::gil_scoped_acquire acquire;
+        PyGILState_STATE gstate = PyGILState_Ensure();
         try {
             if(!closing_){
                 py::object result = on_mail_object_();
                 bResult = py::bool_(result);
             }
         } catch (const py::error_already_set& e) {
-            // TODO: verify that the following two lines are equivalent.
-            // PyGILState_Release(gstate);
-            py::gil_scoped_release release;
+            PyGILState_Release(gstate);
             throw pyMOOSException(
                                   "OnMail:: caught an exception thrown in python callback");
         }
 
-        // TODO: verify that the following two lines are equivalent.
-        // PyGILState_Release(gstate);
-        py::gil_scoped_release release;
+        PyGILState_Release(gstate);
 
         return bResult;
     }
@@ -184,23 +170,17 @@ public:
 
         bool bResult = false;
 
-        // TODO: verify that the following two lines are equivalent.
-        // PyGILState_STATE gstate = PyGILState_Ensure();
-        py::gil_scoped_acquire acquire;
+        PyGILState_STATE gstate = PyGILState_Ensure();
         try {
             py::object result = q->second->func_(M);
             bResult = py::bool_(result);
         } catch (const py::error_already_set& e) {
-            // TODO: verify that the following two lines are equivalent.
-            // PyGILState_Release(gstate);
-            py::gil_scoped_release release;
+            PyGILState_Release(gstate);
             throw pyMOOSException(
                                   "ActiveQueue:: caught an exception thrown in python callback");
         }
 
-        // TODO: verify that the following two lines are equivalent.
-        // PyGILState_Release(gstate);
-        py::gil_scoped_release release;
+        PyGILState_Release(gstate);
 
         return bResult;
 
