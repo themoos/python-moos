@@ -103,9 +103,7 @@ public:
 
         bool bResult = false;
 
-        // TODO: verify that the following two lines are equivalent.
         PyGILState_STATE gstate = PyGILState_Ensure();
-        // py::gil_scoped_acquire acquire;
         try {
             py::object result = on_connect_object_();
             bResult = py::bool_(result);
