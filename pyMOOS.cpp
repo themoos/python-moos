@@ -88,11 +88,11 @@ public:
         bool bResult = false;
 
         Py_BEGIN_ALLOW_THREADS
-        PyGILState_STATE gstate = PyGILState_Ensure();
+        // PyGILState_STATE gstate = PyGILState_Ensure();
         closing_ = true;
         bResult = BASE::Close(true);
 
-        PyGILState_Release(gstate);
+        // PyGILState_Release(gstate);
         Py_END_ALLOW_THREADS
 
         return bResult;
