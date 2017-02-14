@@ -42,3 +42,4 @@ script:
 
 after_script:
     - sudo cmake --build . --config Release --target install
+    - cmake --build test

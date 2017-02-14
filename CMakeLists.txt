@@ -101,3 +101,7 @@ INSTALL(FILES ${CMAKE_BINARY_DIR}/pymoos.so
               __init__.py
     DESTINATION ${PYTHON_INSTDIR}/pymoos/
 )
+
+###### Testing ######
+include( CTest )
+ADD_SUBDIRECTORY(testing)
