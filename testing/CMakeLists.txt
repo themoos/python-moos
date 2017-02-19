@@ -6,4 +6,6 @@ macro(add_moos_test name)
         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/${name}.py)
 endmacro()
 
-add_moos_test(abstractmoostest)
+add_moos_test(run_close)
+add_moos_test(register)
+add_moos_test(simple_comms)

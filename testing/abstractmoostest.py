@@ -19,32 +19,23 @@ except ImportError as e:
     raise e
 
 class pyMOOSTestCase(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         try:
-            logger.info('starting MOOSDB')
-            self.moosdb_process = subprocess.Popen(['MOOSDB'])
+            logger.info('starting MOOSDB ...')
+            cls.moosdb_process = subprocess.Popen(['MOOSDB',
+                            '--moos_community=pymoos_test_db'])
             logger.info('starting MOOSDB done')
         except OSError as ose:
             logger.error("Error while launching MOOSDB !"
                         "Is core-moos installed?\n")
             raise ose
 
-    def tearDown(self):
-        logger.info('killing MOOSDB')
-        self.moosdb_process.kill()
+    @classmethod
+    def tearDownClass(cls):
+        logger.info('killing MOOSDB ...')
+        cls.moosdb_process.kill()
         logger.info('killing MOOSDB done')
-
-    def test_run_close(self):
-        # self.assertFalse(True)
-        comms = pymoos.comms()
-        self.assertFalse(comms.is_connected())
-        comms.run('localhost', 9000, 'pymoos_test')
-        # sleep for a little to make sure we have time to connect
-        time.sleep(2)
-        self.assertTrue(comms.is_connected())
-        comms.close(True)
-        self.assertFalse(comms.is_connected())
-
 
 
 if __name__ == '__main__':
