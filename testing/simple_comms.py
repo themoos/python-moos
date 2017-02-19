@@ -63,13 +63,8 @@ class RunCloseTest(pyMOOSTestCase):
             self.assertTrue(c.register('DOUBLE_VAR', 0))
             self.assertTrue(c.register('BINARY_VAR', 0))
             return True
-        #
-        # def on_mail():
-        #
-        #     return True
 
         c.set_on_connect_callback(on_connect)
-        # c.set_on_mail_callback(on_mail)
 
         c.run('localhost', 9000, 'test_zmsg_types')
         c.wait_until_connected(2000)
