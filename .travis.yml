@@ -21,7 +21,7 @@ addons:
             - g++-4.8
             - cmake
 
-before_script:
+before_install:
     - if [ "`uname`" != "Darwin" ] ; then export MOOS_CXX_FLAGS="-fPIC -Wno-long-long"; fi
     - if [ "`uname`" != "Darwin" ] ; then export CXX="g++-4.8"; fi
     - cd ..
@@ -35,11 +35,11 @@ before_script:
     - cd $TRAVIS_BUILD_DIR
     - mkdir build/
 
-script:
+install:
     - cd build/
     - cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_FLAGS=$MOOS_CXX_FLAGS ../
     - cmake --build . --config Release
-
-after_script:
     - sudo cmake --build . --config Release --target install
-    - cmake --build test
+
+script:
+    - make test
