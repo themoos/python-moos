@@ -39,11 +39,10 @@ before_install:
 install:
     - cd build/
     - cmake .. -DPYBIND11_PYTHON_VERSION=$PYTHON_VERSION
-    - cmake --build . --config Release
-    - sudo cmake --build . --config Release --target install
+    - cmake --build .
 
 before_script:
-    - export PYTHONPATH=/usr/local/lib/python$PYTHON_VERSION/dist-packages/
+    - export PYTHONPATH=$PWD
 
 script:
     - ctest -V

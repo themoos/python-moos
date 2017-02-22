@@ -41,6 +41,9 @@ install:
     - cmake --build . --config Release --target install
 
 build_script:
+    - cd %APPVEYOR_BUILD_FOLDER%
+    - mkdir build
+    - cd build
     - cmake -G "%VS_FULL%"
     - cmake --build . --config Release
 
