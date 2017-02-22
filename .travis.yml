@@ -46,4 +46,4 @@ before_script:
     - export PYTHONPATH=/usr/local/lib/python$PYTHON_VERSION/dist-packages/
 
 script:
-    - make test
+    - ctest -V
