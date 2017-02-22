@@ -14,21 +14,19 @@ environment:
 shallow_clone: true
 
 install:
-- ps: |
-    if ($env:PLATFORM -eq "x64") { $env:CMAKE_ARCH = "x64" }
-    if ($env:PYTHON) {
-      if ($env:PLATFORM -eq "x64") { $env:PYTHON = "$env:PYTHON-x64" }
-      $env:PATH = "C:\Python$env:PYTHON\;C:\Python$env:PYTHON\Scripts\;$env:PATH"
-      pip install --disable-pip-version-check --user --upgrade pip wheel
-      pip install pytest numpy scipy
-    } elseif ($env:CONDA) {
-      if ($env:CONDA -eq "27") { $env:CONDA = "" }
-      if ($env:PLATFORM -eq "x64") { $env:CONDA = "$env:CONDA-x64" }
-      $env:PATH = "C:\Miniconda$env:CONDA\;C:\Miniconda$env:CONDA\Scripts\;$env:PATH"
-      conda install -y -q pytest numpy scipy
-    }
-
-init:
+    - ps: |
+        if ($env:PLATFORM -eq "x64") { $env:CMAKE_ARCH = "x64" }
+        if ($env:PYTHON) {
+          if ($env:PLATFORM -eq "x64") { $env:PYTHON = "$env:PYTHON-x64" }
+          $env:PATH = "C:\Python$env:PYTHON\;C:\Python$env:PYTHON\Scripts\;$env:PATH"
+          pip install --disable-pip-version-check --user --upgrade pip wheel
+          pip install pytest numpy scipy
+        } elseif ($env:CONDA) {
+          if ($env:CONDA -eq "27") { $env:CONDA = "" }
+          if ($env:PLATFORM -eq "x64") { $env:CONDA = "$env:CONDA-x64" }
+          $env:PATH = "C:\Miniconda$env:CONDA\;C:\Miniconda$env:CONDA\Scripts\;$env:PATH"
+          conda install -y -q pytest numpy scipy
+        }
     - if "%platform%" == "x64" SET VS_FULL=Visual Studio 14 2015 Win64
     - if "%platform%" == "x86" SET VS_FULL=Visual Studio 14 2015
     - cd ..
