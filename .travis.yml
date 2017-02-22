@@ -10,7 +10,8 @@ compiler:
     - gcc
 
 env:
-    - BUILD_TYPE=Release
+    - PYTHON_VERSION=2.7
+    - PYTHON_VERSION=3.5
 
 addons:
     apt:
@@ -30,16 +31,19 @@ before_install:
     - mkdir build
     - cd build
     - cmake -DENABLE_EXPORT=ON -DUSE_ASYNC_COMMS=ON -DTIME_WARP_AGGLOMERATION=0.4 -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_FLAGS=$MOOS_CXX_FLAGS ..
-    - cmake --build . --config Release
+    - cmake --build . --config Release --config -j4
     - sudo cmake --build . --config Release --target install
     - cd $TRAVIS_BUILD_DIR
     - mkdir build/
 
 install:
     - cd build/
-    - cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_FLAGS=$MOOS_CXX_FLAGS ../
+    - cmake .. -DPYBIND11_PYTHON_VERSION=$PYTHON_VERSION
     - cmake --build . --config Release
     - sudo cmake --build . --config Release --target install
+
+before_script:
+    - export PYTHONPATH=/usr/local/lib/python$PYTHON_VERSION/dist-packages/
 
 script:
     - make test

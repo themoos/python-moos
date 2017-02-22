@@ -1,5 +1,7 @@
 version: devel-{build}
 
+os: Visual Studio 2015
+
 platform:
     - x64
     - x86
@@ -7,53 +9,39 @@ platform:
 environment:
     matrix:
     - CONDA: 27
-      VS_VERSION: Visual Studio 11 2012
-
     - CONDA: 35
-      VS_VERSION: Visual Studio 11 2012
-
-    - CONDA: 27
-      VS_VERSION: Visual Studio 12 2013
-
-    - CONDA: 35
-      VS_VERSION: Visual Studio 12 2013
-
-    - CONDA: 27
-      VS_VERSION: Visual Studio 14 2015
-
-    - CONDA: 35
-      VS_VERSION: Visual Studio 14 2015
 
 shallow_clone: true
 
 install:
 - ps: |
+    if ($env:PLATFORM -eq "x64") { $env:CMAKE_ARCH = "x64" }
     if ($env:PYTHON) {
       if ($env:PLATFORM -eq "x64") { $env:PYTHON = "$env:PYTHON-x64" }
       $env:PATH = "C:\Python$env:PYTHON\;C:\Python$env:PYTHON\Scripts\;$env:PATH"
       pip install --disable-pip-version-check --user --upgrade pip wheel
-      pip install numpy scipy
+      pip install pytest numpy scipy
     } elseif ($env:CONDA) {
       if ($env:CONDA -eq "27") { $env:CONDA = "" }
       if ($env:PLATFORM -eq "x64") { $env:CONDA = "$env:CONDA-x64" }
       $env:PATH = "C:\Miniconda$env:CONDA\;C:\Miniconda$env:CONDA\Scripts\;$env:PATH"
-      conda install -y -q numpy scipy
+      conda install -y -q pytest numpy scipy
     }
 
 init:
-    - if "%platform%" == "x64" SET VS_FULL=%VS_VERSION% Win64
-    - if "%platform%" == "x86" SET VS_FULL=%VS_VERSION%
+    - if "%platform%" == "x64" SET VS_FULL=Visual Studio 14 2015 Win64
+    - if "%platform%" == "x86" SET VS_FULL=Visual Studio 14 2015
     - cd ..
     - git clone -b wOnlineCI --depth=1 https://github.com/msis/core-moos
     - cd core-moos
     - mkdir build
     - cd build
-    - cmake -G "%VS_FULL%" -DENABLE_EXPORT=ON -DUSE_ASYNC_COMMS=ON -DTIME_WARP_AGGLOMERATION=0.4 -DCMAKE_BUILD_TYPE=$BUILD_TYPE ../
+    - cmake -G "%VS_FULL%" -DENABLE_EXPORT=ON -DUSE_ASYNC_COMMS=ON -DTIME_WARP_AGGLOMERATION=0.4 -DCMAKE_BUILD_TYPE=Release ../
     - cmake --build . --config Release
     - cmake --build . --config Release --target install
 
 build_script:
-    - cmake -G "%VS_FULL%" -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+    - cmake -G "%VS_FULL%"
     - cmake --build . --config Release
 
 on_success:
