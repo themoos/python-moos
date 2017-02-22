@@ -25,9 +25,10 @@ class RunCloseTest(pyMOOSTestCase):
     def test_notify_msg(self):
         c = pymoos.comms()
         c.set_on_connect_callback(
-                lambda : self.assertTrue(c.register('SIMPLE_VAR', 0)))
+                lambda : self.assertTrue(c.register('SIMPLE_VAR')))
         c.run('localhost', 9000, 'test_notify_msg')
-        c.wait_until_connected(2000)
+        c.wait_until_connected(5000)
+        time.sleep(1)
 
         self.assertTrue(c.is_registered_for('SIMPLE_VAR'))
 
