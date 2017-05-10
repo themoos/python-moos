@@ -249,6 +249,12 @@ PYBIND11_PLUGIN(pymoos)
         .def("source", &CMOOSMsg::GetSource, "Return the name of the"
                       " process (as registered with the DB) who posted the"
                       " notification.")
+        .def("source_aux", &CMOOSMsg::GetSourceAux, "Return the name of the"
+                      " process (as registered with the DB) who posted the"
+                      " notification auxiliary field.")
+
+        .def("community", &CMOOSMsg::GetCommunity, "Return the name of the "
+                      "MOOS community in which the orginator lives")
 
         .def("is_double", &CMOOSMsg::IsDouble, "Check if data is double.")
 
