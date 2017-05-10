@@ -42,6 +42,8 @@ install:
     - cmake --build .
 
 before_script:
+    - mkdir pymoos && cp pymoos.so pymoos/
+    - cp ../__init__.py pymoos/
     - export PYTHONPATH=$PWD
 
 script:
