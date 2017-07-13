@@ -2,14 +2,14 @@ version: devel-{build}
 
 os: Visual Studio 2015
 
-test: off
-
 platform:
     - x64
     - x86
 
 environment:
     matrix:
+    - PYTHON: 27
+    - PYTHON: 36
     - CONDA: 27
     - CONDA: 35
 
@@ -21,13 +21,15 @@ install:
         if ($env:PYTHON) {
           if ($env:PLATFORM -eq "x64") { $env:PYTHON = "$env:PYTHON-x64" }
           $env:PATH = "C:\Python$env:PYTHON\;C:\Python$env:PYTHON\Scripts\;$env:PATH"
-          pip install --disable-pip-version-check --user --upgrade pip wheel
-          pip install pytest numpy scipy
+          pip install --disable-pip-version-check --user --upgrade pip setuptools
         } elseif ($env:CONDA) {
           if ($env:CONDA -eq "27") { $env:CONDA = "" }
           if ($env:PLATFORM -eq "x64") { $env:CONDA = "$env:CONDA-x64" }
           $env:PATH = "C:\Miniconda$env:CONDA\;C:\Miniconda$env:CONDA\Scripts\;$env:PATH"
-          conda install -y -q pytest numpy scipy
+          conda config --set always_yes yes --set changeps1 no
+          conda config --add channels conda-forge
+          conda update -q conda
+          conda install -q conda-build
         }
     - if "%platform%" == "x64" SET VS_FULL=Visual Studio 14 2015 Win64
     - if "%platform%" == "x86" SET VS_FULL=Visual Studio 14 2015
@@ -36,16 +38,25 @@ install:
     - cd core-moos
     - mkdir build
     - cd build
-    - cmake -G "%VS_FULL%" -DENABLE_EXPORT=ON -DUSE_ASYNC_COMMS=ON -DTIME_WARP_AGGLOMERATION=0.4 -DCMAKE_BUILD_TYPE=Release ../
+    - cmake -G "%VS_FULL%" -DENABLE_EXPORT=ON -DUSE_ASYNC_COMMS=ON -DCMAKE_BUILD_TYPE=Release ../
     - cmake --build . --config Release
     - cmake --build . --config Release --target install
 
 build_script:
     - cd %APPVEYOR_BUILD_FOLDER%
-    - mkdir build
-    - cd build
-    - cmake -G "%VS_FULL%"
-    - cmake --build . --config Release
+    - ps: |
+        if ($env:PYTHON) {
+          python setup.py sdist
+          pip install --verbose dist\pymoos-0.0.1.tar.gz
+        } else {
+          conda build conda.recipe
+          conda install --use-local pymoos
+        }
 
-on_success:
-    - cmake --build . --config Release --target install
+test_script:
+    - ps: |
+        cd tests
+        python run_close.py
+        python simple_comms.py
+        python register.py
+        python callbacks.py

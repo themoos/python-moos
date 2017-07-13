@@ -1,26 +1,33 @@
 language: cpp
-
-sudo: required
-
-os:
-    - linux
-    - osx
-
-compiler:
-    - gcc
-
-env:
-    - PYTHON_VERSION=2.7
-    - PYTHON_VERSION=3.2
-
+matrix:
+  include:
+  - os: linux
+    env: PYTHON=2.7
+  - os: linux
+    env: PYTHON=3.5
+  - os: linux
+    env: CONDA=2.7
+  - os: linux
+    env: CONDA=3.5
+  - os: osx
+    env: PYTHON=2.7
+  - os: osx
+    env: PYTHON=3.6
+  - os: osx
+    env: CONDA=2.7
+  - os: osx
+    env: CONDA=3.5
 addons:
-    apt:
-        sources:
-            - ubuntu-toolchain-r-test
-            - kubuntu-backports
-        packages:
-            - g++-4.8
-            - cmake
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    - deadsnakes
+    - kubuntu-backports
+    packages:
+    - g++-4.8
+    - python3.5
+    - python3.5-dev
+    - cmake
 
 before_install:
     - if [ "`uname`" != "Darwin" ] ; then export MOOS_CXX_FLAGS="-fPIC -Wno-long-long"; fi
@@ -30,21 +37,45 @@ before_install:
     - cd core-moos
     - mkdir build
     - cd build
-    - cmake -DENABLE_EXPORT=ON -DUSE_ASYNC_COMMS=ON -DTIME_WARP_AGGLOMERATION=0.4 -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_CXX_FLAGS=$MOOS_CXX_FLAGS ..
+    - cmake -DENABLE_EXPORT=ON -DUSE_ASYNC_COMMS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=$MOOS_CXX_FLAGS ..
     - cmake --build . --config Release --config -j4
     - sudo cmake --build . --config Release --target install
     - cd $TRAVIS_BUILD_DIR
-    - mkdir build/
+    - |
+      if [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX=g++-4.8 CC=gcc-4.8; fi
+      if [ -n "$PYTHON" ]; then
+        if [ "$TRAVIS_OS_NAME" = "osx" ] && [ "${PYTHON:0:1}" = "3" ]; then
+          brew update; brew install python3;
+        fi
+        pip install --user --upgrade pip virtualenv
+        virtualenv -p python$PYTHON venv
+        source venv/bin/activate
+      elif [ -n "$CONDA" ]; then
+        if [ "$TRAVIS_OS_NAME" = "linux" ]; then OS=Linux-x86_64; else OS=MacOSX-x86_64; fi
+        wget -O miniconda.sh https://repo.continuum.io/miniconda/Miniconda${CONDA:0:1}-latest-$OS.sh
+        bash miniconda.sh -b -p $HOME/miniconda
+        export PATH="$HOME/miniconda/bin:$PATH"
+        conda config --set always_yes yes --set changeps1 no
+        conda config --add channels conda-forge
+        conda update -q conda
+        conda install -q conda-build
+        conda create -q -n test-environment python=$CONDA
+        source activate test-environment
+      fi
 
 install:
-    - cd build/
-    - cmake .. -DPYBIND11_PYTHON_VERSION=$PYTHON_VERSION
-    - cmake --build .
-
-before_script:
-    - mkdir pymoos && cp pymoos.so pymoos/
-    - cp ../__init__.py pymoos/
-    - export PYTHONPATH=$PWD
+    - |
+      if [ -n "$PYTHON" ]; then
+        python setup.py sdist
+        pip install --verbose dist/*.tar.gz
+      elif [ -n "$CONDA" ]; then
+        conda build conda.recipe
+        conda install --use-local pymoos
+      fi
 
 script:
-    - ctest -V
+    - cd tests/
+    - python run_close.py
+    - python simple_comms.py
+    - python register.py
+    - python callbacks.py
