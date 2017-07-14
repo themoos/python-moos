@@ -13,7 +13,7 @@ logger = logging.getLogger('tests')
 
 
 try:
-    from pymoos import pymoos
+    import pymoos
 except ImportError as e:
     logger.error('Could not find pymoos package. Is it installed?')
     raise e
