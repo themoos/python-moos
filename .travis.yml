@@ -78,8 +78,4 @@ install:
       fi
 
 script:
-    - cd tests/
-    - python run_close.py
-    - python simple_comms.py
-    - python register.py
-    - python callbacks.py
+    - python tests/test.py
