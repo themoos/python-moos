@@ -18,27 +18,13 @@ PYBIND11_MAKE_OPAQUE(CommsStatusVector);
 
 namespace py = pybind11;
 
-struct pyMOOSException : std::exception {
-    pyMOOSException() {
-    }
-    ;
-    virtual ~pyMOOSException() throw () {
-    }
-    ;
-
-    pyMOOSException(const std::string & s) :
-        s_(s) {
-    }
-    char const* what() const throw () {
-        return s_.c_str();
-    }
-    std::string s_;
+class pyMOOSException : public std::exception {
+public:
+    explicit pyMOOSException(const char * m) : message{m} {}
+    virtual const char * what() const noexcept override {return message.c_str();}
+private:
+    std::string message = "";
 };
-
-void MOOSExceptionTranslator(const pyMOOSException & e) {
-    // Use the Python 'C' API to set up an exception object
-    PyErr_SetString(PyExc_RuntimeError, e.what());
-}
 
 namespace MOOS {
 
@@ -115,7 +101,7 @@ public:
         } catch (const py::error_already_set& e) {
             PyGILState_Release(gstate);
             throw pyMOOSException(
-                                  "OnConnect:: caught an exception thrown in python callback");
+                  "OnConnect:: caught an exception thrown in python callback");
         }
 
         PyGILState_Release(gstate);
@@ -148,7 +134,7 @@ public:
         } catch (const py::error_already_set& e) {
             PyGILState_Release(gstate);
             throw pyMOOSException(
-                                  "OnMail:: caught an exception thrown in python callback");
+                      "OnMail:: caught an exception thrown in python callback");
         }
 
         PyGILState_Release(gstate);
@@ -180,7 +166,7 @@ public:
         } catch (const py::error_already_set& e) {
             PyGILState_Release(gstate);
             throw pyMOOSException(
-                                  "ActiveQueue:: caught an exception thrown in python callback");
+                "ActiveQueue:: caught an exception thrown in python callback");
         }
 
         PyGILState_Release(gstate);
@@ -544,8 +530,17 @@ PYBIND11_PLUGIN(pymoos)
               "Return the current time warp factor.");
 
     // TODO: double check that it's still needed
-    // py::register_exception_translator<pyMOOSException>(&MOOSExceptionTranslator);
-    // py::register_exception<pyMOOSException>(m, "MOOSExcep");
+    static py::exception<pyMOOSException> ex(m, "pyMOOSException");
+    py::register_exception_translator([](std::exception_ptr p) {
+        try {
+            if (p) std::rethrow_exception(p);
+        } catch (const pyMOOSException &e) {
+            // Set pyMOOSException as the active python error
+            // ex(e.what());
+            PyErr_SetString(PyExc_RuntimeError, e.what());
+        }
+    });
+
 
     return m.ptr();
 }
