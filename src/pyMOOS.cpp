@@ -1,3 +1,7 @@
+#if defined(_WIN32)
+#define NOMINMAX
+#endif
+
 #include <exception>
 #include "MOOS/libMOOS/Comms/MOOSMsg.h"
 #include "MOOS/libMOOS/Comms/MOOSCommClient.h"
